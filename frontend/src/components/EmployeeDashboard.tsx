@@ -219,17 +219,16 @@ const EmployeeDashboard = () => {
               <div className="flex items-start gap-3">
                 <Lock className="w-5 h-5 text-accent mt-0.5" />
                 <div>
-                  <div className="font-semibold mb-1">Fully Homomorphic Encryption (FHE)</div>
+                  <div className="font-semibold mb-1">Zama FHE Technology</div>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Your salary information is encrypted using FHE technology from Zama.
-                    This means your salary remains encrypted on the blockchain at all times,
-                    and only authorized parties can access it.
+                    Your salary data is protected by Fully Homomorphic Encryption from Zama.
+                    All salary information remains encrypted on-chain, and only you can decrypt your own data.
                   </p>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>✅ Monthly salary encrypted when you're added to the organization</li>
-                    <li>✅ Payroll distributions processed on encrypted data</li>
-                    <li>✅ Your wallet address can decrypt and view your own salary</li>
-                    <li>✅ Organization admins can manage payroll without seeing individual salaries</li>
+                    <li>✅ Salaries encrypted with Zama FHE when added to organization</li>
+                    <li>✅ Payroll computations performed on encrypted data</li>
+                    <li>✅ Only you can view your own salary information</li>
+                    <li>✅ Admins manage distributions without seeing individual salaries</li>
                   </ul>
                 </div>
               </div>

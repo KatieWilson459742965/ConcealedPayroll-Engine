@@ -15,20 +15,20 @@ const Hero = () => {
         {/* Hero Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-8 animate-fade-in">
           <Lock className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium">Powered by FHE Technology</span>
+          <span className="text-sm font-medium">Powered by Zama FHE</span>
         </div>
 
         {/* Main Heading */}
         <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <span className="gradient-text">Private Payroll</span>
+          <span className="gradient-text">PrivyPayroll</span>
           <br />
-          <span className="text-foreground">Distribution Platform</span>
+          <span className="text-foreground">Privacy-First Payroll Platform</span>
         </h1>
 
         {/* Subtitle */}
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          Enterprise-grade salary distribution with Fully Homomorphic Encryption.
-          Secure, private, and transparent blockchain payroll management.
+          Enterprise-grade encrypted payroll management powered by Zama's FHE technology.
+          Keep salaries confidential while maintaining complete operational transparency.
         </p>
 
         {/* CTA Buttons */}
@@ -46,9 +46,9 @@ const Hero = () => {
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 mx-auto">
               <Lock className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">FHE Encryption</h3>
+            <h3 className="text-lg font-semibold mb-2">Complete Privacy</h3>
             <p className="text-sm text-muted-foreground">
-              Fully homomorphic encryption ensures complete salary privacy while maintaining computational capability
+              Salaries remain encrypted on-chain with Zama FHE. Only authorized parties can decrypt their own data.
             </p>
           </div>
 
@@ -56,9 +56,9 @@ const Hero = () => {
             <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4 mx-auto">
               <Shield className="w-6 h-6 text-accent" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Department-Based</h3>
+            <h3 className="text-lg font-semibold mb-2">Organization Management</h3>
             <p className="text-sm text-muted-foreground">
-              Organize employees by departments with unique IDs for streamlined payroll management
+              Create organizations, add team members, and manage encrypted payroll distributions seamlessly
             </p>
           </div>
 
@@ -66,9 +66,9 @@ const Hero = () => {
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 mx-auto">
               <Wallet className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Blockchain Native</h3>
+            <h3 className="text-lg font-semibold mb-2">Blockchain Secure</h3>
             <p className="text-sm text-muted-foreground">
-              Direct wallet-to-wallet payments with full transparency and immutable records
+              All payroll records stored immutably on Ethereum with full audit trail and transparency
             </p>
           </div>
         </div>
