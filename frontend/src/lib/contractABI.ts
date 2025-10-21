@@ -182,4 +182,4 @@ export const PAYROLL_MANAGER_ABI = [
 ] as const;
 
 // Deployed on Sepolia testnet
-export const CONTRACT_ADDRESS = "0x70805f51b41180b080d01153E3c9045b30178990";
+export const CONTRACT_ADDRESS = "0x3eDDF8a86B091103a3F13BA40E2106F1Fd771830";

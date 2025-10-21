@@ -135,9 +135,9 @@ export const encryptPayrollData = async (
   const ciphertext = await fhe.createEncryptedInput(contractAddressChecksum, userAddress);
 
   // Add all values in order
-  ciphertext.add128(recipientHash);      // euint128
+  ciphertext.add64(recipientHash);       // euint64 - sufficient for hash identifier
   ciphertext.add64(memberIndex);         // euint64
-  ciphertext.add128(amount);             // euint128
+  ciphertext.add64(amount);              // euint64 - sufficient for USD cents (max ~$184 quadrillion)
   ciphertext.add32(currency);            // euint32
   ciphertext.add32(period);              // euint32
 
@@ -163,15 +163,18 @@ export const encryptPayrollData = async (
 /**
  * Generate a deterministic hash from an address
  * This creates a privacy-preserving identifier
+ * Returns a value that fits in euint64 (max: 18,446,744,073,709,551,615)
  */
 export const hashAddress = (address: string): bigint => {
   const encoder = new TextEncoder();
   const data = encoder.encode(address.toLowerCase());
 
-  // Simple hash function (in production, use a proper cryptographic hash)
+  // Simple hash function that fits in euint64
   let hash = 0n;
+  const MAX_UINT64 = 0xFFFFFFFFFFFFFFFFn; // 2^64 - 1
+
   for (let i = 0; i < data.length; i++) {
-    hash = (hash << 8n) | BigInt(data[i]);
+    hash = ((hash * 31n) + BigInt(data[i])) % MAX_UINT64;
   }
 
   return hash;

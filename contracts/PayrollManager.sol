@@ -45,11 +45,11 @@ contract PayrollManager is SepoliaConfig {
         bytes32 organizationId;
 
         // Encrypted recipient information
-        euint128 encryptedRecipientHash;    // Hash of recipient address (for privacy)
+        euint64 encryptedRecipientHash;      // Hash of recipient address (for privacy)
         euint64 encryptedMemberIndex;        // Member index in organization
 
         // Encrypted payment details
-        euint128 encryptedAmount;            // Payment amount
+        euint64 encryptedAmount;             // Payment amount in USD cents (max ~$184 quadrillion)
         euint32 encryptedCurrency;           // Currency code (e.g., 1=USD, 2=EUR)
         euint32 encryptedPeriod;             // Payment period (YYYYMM format)
 
@@ -284,9 +284,9 @@ contract PayrollManager is SepoliaConfig {
     function createPayrollDistribution(
         bytes32 distributionId,
         bytes32 organizationId,
-        externalEuint128 encryptedRecipientHash,
+        externalEuint64 encryptedRecipientHash,
         externalEuint64 encryptedMemberIndex,
-        externalEuint128 encryptedAmount,
+        externalEuint64 encryptedAmount,
         externalEuint32 encryptedCurrency,
         externalEuint32 encryptedPeriod,
         bytes calldata inputProof  // Shared proof for all encrypted values (FHE best practice)
@@ -300,9 +300,9 @@ contract PayrollManager is SepoliaConfig {
         }
 
         // Import encrypted values with shared proof
-        euint128 recipientHash = FHE.fromExternal(encryptedRecipientHash, inputProof);
+        euint64 recipientHash = FHE.fromExternal(encryptedRecipientHash, inputProof);
         euint64 memberIndex = FHE.fromExternal(encryptedMemberIndex, inputProof);
-        euint128 amount = FHE.fromExternal(encryptedAmount, inputProof);
+        euint64 amount = FHE.fromExternal(encryptedAmount, inputProof);
         euint32 currency = FHE.fromExternal(encryptedCurrency, inputProof);
         euint32 period = FHE.fromExternal(encryptedPeriod, inputProof);
 
@@ -493,9 +493,9 @@ contract PayrollManager is SepoliaConfig {
         external
         view
         returns (
-            euint128 encryptedRecipientHash,
+            euint64 encryptedRecipientHash,
             euint64 encryptedMemberIndex,
-            euint128 encryptedAmount,
+            euint64 encryptedAmount,
             euint32 encryptedCurrency,
             euint32 encryptedPeriod
         )
