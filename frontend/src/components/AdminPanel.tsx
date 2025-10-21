@@ -352,9 +352,21 @@ const AdminPanel = () => {
                   disabled={loading}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="monthlySalary">Monthly Salary (USD)</Label>
+                <Input
+                  id="monthlySalary"
+                  type="number"
+                  placeholder="5000.00"
+                  value={newMember.monthlySalary}
+                  onChange={(e) => setNewMember({ ...newMember, monthlySalary: e.target.value })}
+                  disabled={loading}
+                />
+                <p className="text-xs text-muted-foreground">Encrypted and stored securely on-chain</p>
+              </div>
               <Button
                 onClick={handleAddMember}
-                disabled={loading || !newMember.address || !newMember.name || !newMember.role}
+                disabled={loading || !newMember.address || !newMember.name || !newMember.role || !newMember.monthlySalary}
                 className="w-full glow-effect"
               >
                 {loading ? (
@@ -405,27 +417,15 @@ const AdminPanel = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Salary Amount (USD)</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="5000.00"
-                      value={payrollForm.amount}
-                      onChange={(e) => setPayrollForm({ ...payrollForm, amount: e.target.value })}
-                      disabled={loading}
-                    />
-                    <p className="text-xs text-muted-foreground">Enter amount in USD (e.g., 5000.00)</p>
+                    <p className="text-xs text-muted-foreground">Member's monthly salary will be used automatically</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="period">Payment Period (YYYYMM)</Label>
                     <Input
                       id="period"
                       placeholder="202501"
-                      value={payrollForm.period}
-                      onChange={(e) => setPayrollForm({ ...payrollForm, period: e.target.value })}
+                      value={payrollPeriod}
+                      onChange={(e) => setPayrollPeriod(e.target.value)}
                       disabled={loading}
                       maxLength={6}
                     />
@@ -433,7 +433,7 @@ const AdminPanel = () => {
                   </div>
                   <Button
                     onClick={handleDistributeSalary}
-                    disabled={loading || !selectedMemberId || !payrollForm.amount || !payrollForm.period}
+                    disabled={loading || !selectedMemberId || !payrollPeriod}
                     className="w-full glow-effect"
                   >
                     {loading ? (
