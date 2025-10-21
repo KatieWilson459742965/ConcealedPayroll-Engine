@@ -56,7 +56,6 @@ const AdminPanel = () => {
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
   const [payrollForm, setPayrollForm] = useState({
     amount: "",
-    currency: "1", // 1=USD
     period: "",
   });
 
@@ -181,13 +180,12 @@ const AdminPanel = () => {
         selectedMember.address,
         memberIndex,
         amountInCents.toString(), // Pass as string, will be converted inside hook
-        parseInt(payrollForm.currency),
+        1, // Currency code 1 = USD (fixed)
         periodNum
       );
 
       setPayrollForm({
         amount: "",
-        currency: "1",
         period: "",
       });
       setSelectedMemberId("");
@@ -427,25 +425,7 @@ const AdminPanel = () => {
                       onChange={(e) => setPayrollForm({ ...payrollForm, amount: e.target.value })}
                       disabled={loading}
                     />
-                    <p className="text-xs text-muted-foreground">Enter amount in dollars (e.g., 5000.00)</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Currency</Label>
-                    <Select
-                      value={payrollForm.currency}
-                      onValueChange={(value) => setPayrollForm({ ...payrollForm, currency: value })}
-                      disabled={loading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">USD</SelectItem>
-                        <SelectItem value="2">EUR</SelectItem>
-                        <SelectItem value="3">GBP</SelectItem>
-                        <SelectItem value="4">ETH</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <p className="text-xs text-muted-foreground">Enter amount in USD (e.g., 5000.00)</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="period">Payment Period (YYYYMM)</Label>
