@@ -278,6 +278,41 @@ export const usePayroll = () => {
     }
   }, [address]);
 
+  // Get Organization Distributions (payroll records)
+  const getOrganizationDistributions = useCallback(async (organizationId: string) => {
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new Contract(CONTRACT_ADDRESS, PAYROLL_MANAGER_ABI, provider);
+
+      const distributionIds = await contract.getOrganizationDistributions(organizationId);
+      return distributionIds;
+    } catch (error: any) {
+      console.error('Get organization distributions error:', error);
+      return [];
+    }
+  }, []);
+
+  // Get Distribution Details
+  const getDistribution = useCallback(async (distributionId: string) => {
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new Contract(CONTRACT_ADDRESS, PAYROLL_MANAGER_ABI, provider);
+
+      const dist = await contract.getDistribution(distributionId);
+      return {
+        organizationId: dist[0],
+        initiator: dist[1],
+        createdAt: dist[2],
+        executedAt: dist[3],
+        isExecuted: dist[4],
+        isCancelled: dist[5]
+      };
+    } catch (error: any) {
+      console.error('Get distribution error:', error);
+      throw error;
+    }
+  }, []);
+
   return {
     loading,
     createOrganization,
@@ -288,6 +323,8 @@ export const usePayroll = () => {
     getMyOrganizations,
     getOrganizationMembers,
     getTeamMember,
-    getMemberOrganizations
+    getMemberOrganizations,
+    getOrganizationDistributions,
+    getDistribution
   };
 };

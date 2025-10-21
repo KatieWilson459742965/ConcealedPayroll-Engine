@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, UserPlus, Send, Loader2, ArrowLeft } from "lucide-react";
+import { Building2, UserPlus, Send, Loader2, ArrowLeft, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { usePayroll } from "@/hooks/usePayroll";
 import { isAddress } from "ethers";
+import OrganizationDetails from "./OrganizationDetails";
 
 interface Organization {
   id: string;
@@ -23,7 +24,7 @@ interface TeamMember {
   joinedAt: bigint;
 }
 
-type ViewMode = 'list' | 'create-org' | 'manage-org';
+type ViewMode = 'list' | 'create-org' | 'manage-org' | 'view-details';
 
 const AdminPanel = () => {
   const { address } = useAccount();
@@ -219,18 +220,34 @@ const AdminPanel = () => {
               {organizations.map((org) => (
                 <Card
                   key={org.id}
-                  className="glass-card border-0 cursor-pointer hover:border-primary/50 transition-colors"
-                  onClick={() => handleSelectOrganization(org.id)}
+                  className="glass-card border-0"
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-semibold text-lg">{org.name}</h3>
-                        <p className="text-xs text-muted-foreground font-mono">{org.id}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{org.id.slice(0, 16)}...</p>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        Manage →
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedOrg(org.id);
+                            setViewMode('view-details');
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View Details
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleSelectOrganization(org.id)}
+                        >
+                          Manage →
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -295,6 +312,23 @@ const AdminPanel = () => {
           </Card>
         </div>
       </div>
+    );
+  }
+
+  // Render organization details view
+  if (viewMode === 'view-details') {
+    const selectedOrgData = organizations.find(org => org.id === selectedOrg);
+    if (!selectedOrgData) {
+      setViewMode('list');
+      return null;
+    }
+
+    return (
+      <OrganizationDetails
+        organizationId={selectedOrg}
+        organizationName={selectedOrgData.name}
+        onBack={() => setViewMode('list')}
+      />
     );
   }
 
