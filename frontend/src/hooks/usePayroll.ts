@@ -109,15 +109,16 @@ export const usePayroll = () => {
       // Hash recipient address for privacy
       const recipientHash = hashAddress(recipientAddress);
 
-      // Convert amount to wei (assuming 18 decimals)
-      const amountWei = BigInt(ethers.parseEther(amount).toString());
+      // Amount is already in cents (e.g., 500000 cents = $5000.00)
+      // This avoids overflow issues with parseEther
+      const amountValue = BigInt(amount);
 
       // Encrypt all payroll data together
       toast.info('Encrypting payroll data...');
       const encrypted = await encryptPayrollData(
         recipientHash,
         memberIndex,
-        amountWei,
+        amountValue,
         currency,
         period,
         CONTRACT_ADDRESS,

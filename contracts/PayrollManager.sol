@@ -300,11 +300,11 @@ contract PayrollManager is SepoliaConfig {
         }
 
         // Import encrypted values with shared proof
-        euint128 recipientHash = FHE.asEuint128(encryptedRecipientHash, inputProof);
-        euint64 memberIndex = FHE.asEuint64(encryptedMemberIndex, inputProof);
-        euint128 amount = FHE.asEuint128(encryptedAmount, inputProof);
-        euint32 currency = FHE.asEuint32(encryptedCurrency, inputProof);
-        euint32 period = FHE.asEuint32(encryptedPeriod, inputProof);
+        euint128 recipientHash = FHE.fromExternal(encryptedRecipientHash, inputProof);
+        euint64 memberIndex = FHE.fromExternal(encryptedMemberIndex, inputProof);
+        euint128 amount = FHE.fromExternal(encryptedAmount, inputProof);
+        euint32 currency = FHE.fromExternal(encryptedCurrency, inputProof);
+        euint32 period = FHE.fromExternal(encryptedPeriod, inputProof);
 
         // Set access permissions
         FHE.allowThis(recipientHash);

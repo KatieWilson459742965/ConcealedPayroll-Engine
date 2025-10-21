@@ -181,5 +181,5 @@ export const PAYROLL_MANAGER_ABI = [
   }
 ] as const;
 
-// Replace with your deployed contract address
-export const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000";
+// Deployed on Sepolia testnet
+export const CONTRACT_ADDRESS = "0x70805f51b41180b080d01153E3c9045b30178990";
