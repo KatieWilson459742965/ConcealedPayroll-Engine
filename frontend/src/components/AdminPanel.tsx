@@ -50,14 +50,12 @@ const AdminPanel = () => {
     address: "",
     name: "",
     role: "",
+    monthlySalary: "",  // Monthly salary in USD
   });
 
-  // Payroll Distribution Form
+  // Payroll Distribution Form (only needs member and period, salary read from contract)
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
-  const [payrollForm, setPayrollForm] = useState({
-    amount: "",
-    period: "",
-  });
+  const [payrollPeriod, setPayrollPeriod] = useState("");  // Format: YYYYMM e.g., "202501"
 
   // Load organizations on mount
   useEffect(() => {
@@ -124,8 +122,8 @@ const AdminPanel = () => {
   };
 
   const handleAddMember = async () => {
-    if (!newMember.address || !newMember.name || !newMember.role) {
-      toast.error("Please fill all member fields");
+    if (!newMember.address || !newMember.name || !newMember.role || !newMember.monthlySalary) {
+      toast.error("Please fill all member fields including monthly salary");
       return;
     }
 
@@ -134,9 +132,21 @@ const AdminPanel = () => {
       return;
     }
 
+    const salary = parseFloat(newMember.monthlySalary);
+    if (isNaN(salary) || salary <= 0) {
+      toast.error("Please enter a valid monthly salary");
+      return;
+    }
+
     try {
-      await addTeamMember(selectedOrg, newMember.address, newMember.name, newMember.role);
-      setNewMember({ address: "", name: "", role: "" });
+      await addTeamMember(
+        selectedOrg,
+        newMember.address,
+        newMember.name,
+        newMember.role,
+        newMember.monthlySalary  // Pass monthly salary in USD
+      );
+      setNewMember({ address: "", name: "", role: "", monthlySalary: "" });
       await loadMembers();
       toast.success("Team member added successfully!");
     } catch (error: any) {
@@ -150,44 +160,26 @@ const AdminPanel = () => {
       return;
     }
 
-    if (!payrollForm.amount || !payrollForm.period) {
-      toast.error("Please fill all payroll fields");
+    if (!payrollPeriod) {
+      toast.error("Please enter the period (YYYYMM)");
       return;
     }
 
     // Validate period format (YYYYMM)
-    const periodNum = parseInt(payrollForm.period);
-    if (isNaN(periodNum) || payrollForm.period.length !== 6) {
+    if (payrollPeriod.length !== 6 || isNaN(parseInt(payrollPeriod))) {
       toast.error("Period must be in YYYYMM format (e.g., 202501)");
       return;
     }
 
-    // Find selected member
-    const selectedMember = members.find((m) => m.address === selectedMemberId);
-    if (!selectedMember) {
-      toast.error("Member not found");
-      return;
-    }
-
-    const memberIndex = members.indexOf(selectedMember);
-
     try {
-      // Amount in USD cents to avoid overflow (e.g., 1000.50 USD = 100050 cents)
-      const amountInCents = Math.floor(parseFloat(payrollForm.amount) * 100);
-
+      // Salary is automatically read from the member's contract record
       await createPayrollDistribution(
         selectedOrg,
-        selectedMember.address,
-        memberIndex,
-        amountInCents.toString(), // Pass as string, will be converted inside hook
-        1, // Currency code 1 = USD (fixed)
-        periodNum
+        selectedMemberId,  // Member address
+        payrollPeriod      // Period in YYYYMM format
       );
 
-      setPayrollForm({
-        amount: "",
-        period: "",
-      });
+      setPayrollPeriod("");
       setSelectedMemberId("");
       toast.success("Payroll distribution created successfully!");
     } catch (error: any) {

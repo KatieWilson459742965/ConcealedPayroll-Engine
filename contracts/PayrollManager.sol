@@ -26,13 +26,14 @@ contract PayrollManager is SepoliaConfig {
     }
 
     /**
-     * @dev Team member structure (stored in plaintext)
+     * @dev Team member structure (metadata in plaintext, salary encrypted)
      */
     struct TeamMember {
         address memberAddress;
         string memberName;
         string role;
         bytes32 organizationId;
+        euint64 encryptedMonthlySalary;  // Monthly salary in USD cents (encrypted)
         uint256 joinedAt;
         bool isActive;
     }
@@ -194,17 +195,21 @@ contract PayrollManager is SepoliaConfig {
     }
 
     /**
-     * @notice Add a team member to an organization
+     * @notice Add a team member to an organization with encrypted monthly salary
      * @param organizationId ID of the organization
      * @param memberAddress Wallet address of the member
      * @param memberName Name of the member
      * @param role Role/position of the member
+     * @param encryptedMonthlySalary Encrypted monthly salary in USD cents
+     * @param inputProof Proof for the encrypted salary
      */
     function addTeamMember(
         bytes32 organizationId,
         address memberAddress,
         string calldata memberName,
-        string calldata role
+        string calldata role,
+        externalEuint64 encryptedMonthlySalary,
+        bytes calldata inputProof
     )
         external
         organizationExists(organizationId)
@@ -218,11 +223,18 @@ contract PayrollManager is SepoliaConfig {
             revert MemberAlreadyExists();
         }
 
+        // Import encrypted salary
+        euint64 monthlySalary = FHE.fromExternal(encryptedMonthlySalary, inputProof);
+        FHE.allowThis(monthlySalary);
+        FHE.allow(monthlySalary, msg.sender);
+        FHE.allow(monthlySalary, memberAddress);  // Allow member to view their own salary
+
         organizationMembers[organizationId][memberAddress] = TeamMember({
             memberAddress: memberAddress,
             memberName: memberName,
             role: role,
             organizationId: organizationId,
+            encryptedMonthlySalary: monthlySalary,
             joinedAt: block.timestamp,
             isActive: true
         });
@@ -271,25 +283,19 @@ contract PayrollManager is SepoliaConfig {
     // ============ Payroll Distribution Functions ============
 
     /**
-     * @notice Create an encrypted payroll distribution
+     * @notice Create an encrypted payroll distribution (salary read from member record)
      * @param distributionId Unique identifier for this distribution
      * @param organizationId ID of the organization
-     * @param encryptedRecipientHash Encrypted hash of recipient address
-     * @param encryptedMemberIndex Encrypted member index
-     * @param encryptedAmount Encrypted payment amount
-     * @param encryptedCurrency Encrypted currency code
-     * @param encryptedPeriod Encrypted payment period
-     * @param inputProof Shared proof for all encrypted values (FHE best practice)
+     * @param memberAddress Address of the member receiving payment
+     * @param encryptedPeriod Encrypted payment period (YYYYMM format)
+     * @param inputProof Proof for the encrypted period
      */
     function createPayrollDistribution(
         bytes32 distributionId,
         bytes32 organizationId,
-        externalEuint64 encryptedRecipientHash,
-        externalEuint64 encryptedMemberIndex,
-        externalEuint64 encryptedAmount,
-        externalEuint32 encryptedCurrency,
+        address memberAddress,
         externalEuint32 encryptedPeriod,
-        bytes calldata inputProof  // Shared proof for all encrypted values (FHE best practice)
+        bytes calldata inputProof
     )
         external
         organizationExists(organizationId)
@@ -299,26 +305,42 @@ contract PayrollManager is SepoliaConfig {
             revert InvalidParameters();
         }
 
-        // Import encrypted values with shared proof
-        euint64 recipientHash = FHE.fromExternal(encryptedRecipientHash, inputProof);
-        euint64 memberIndex = FHE.fromExternal(encryptedMemberIndex, inputProof);
-        euint64 amount = FHE.fromExternal(encryptedAmount, inputProof);
-        euint32 currency = FHE.fromExternal(encryptedCurrency, inputProof);
+        // Verify member exists and is active
+        TeamMember storage member = organizationMembers[organizationId][memberAddress];
+        if (!member.isActive) {
+            revert MemberNotFound();
+        }
+
+        // Import encrypted period
         euint32 period = FHE.fromExternal(encryptedPeriod, inputProof);
-
-        // Set access permissions
-        FHE.allowThis(recipientHash);
-        FHE.allowThis(memberIndex);
-        FHE.allowThis(amount);
-        FHE.allowThis(currency);
         FHE.allowThis(period);
-
-        // Allow organization owner to access encrypted data
-        FHE.allow(recipientHash, msg.sender);
-        FHE.allow(memberIndex, msg.sender);
-        FHE.allow(amount, msg.sender);
-        FHE.allow(currency, msg.sender);
         FHE.allow(period, msg.sender);
+
+        // Get member's monthly salary from their record
+        euint64 monthlySalary = member.encryptedMonthlySalary;
+
+        // Create recipient hash for privacy
+        euint64 recipientHash = FHE.asEuint64(uint64(uint160(memberAddress) % type(uint64).max));
+        FHE.allowThis(recipientHash);
+        FHE.allow(recipientHash, msg.sender);
+
+        // Find member index
+        address[] memory memberList = organizationMemberList[organizationId];
+        uint64 memberIdx = 0;
+        for (uint64 i = 0; i < memberList.length; i++) {
+            if (memberList[i] == memberAddress) {
+                memberIdx = i;
+                break;
+            }
+        }
+        euint64 memberIndex = FHE.asEuint64(memberIdx);
+        FHE.allowThis(memberIndex);
+        FHE.allow(memberIndex, msg.sender);
+
+        // Currency is always USD (code 1)
+        euint32 currency = FHE.asEuint32(1);
+        FHE.allowThis(currency);
+        FHE.allow(currency, msg.sender);
 
         // Create distribution record
         distributions[distributionId] = PayrollDistribution({
@@ -326,7 +348,7 @@ contract PayrollManager is SepoliaConfig {
             organizationId: organizationId,
             encryptedRecipientHash: recipientHash,
             encryptedMemberIndex: memberIndex,
-            encryptedAmount: amount,
+            encryptedAmount: monthlySalary,  // Use member's pre-configured monthly salary
             encryptedCurrency: currency,
             encryptedPeriod: period,
             initiator: msg.sender,

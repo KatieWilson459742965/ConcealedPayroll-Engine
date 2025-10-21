@@ -81,6 +81,32 @@ export const encryptUint64 = async (
 };
 
 /**
+ * Encrypt monthly salary (in USD cents)
+ */
+export const encryptSalary = async (
+  salaryInCents: bigint,
+  contractAddress: string,
+  userAddress: string
+): Promise<{ handle: string; signature: string }> => {
+  let fhe = getFHEInstance();
+  if (!fhe) {
+    fhe = await initializeFHE();
+  }
+  if (!fhe) throw new Error('Failed to initialize FHE');
+
+  const contractAddressChecksum = getAddress(contractAddress);
+  const ciphertext = await fhe.createEncryptedInput(contractAddressChecksum, userAddress);
+  ciphertext.add64(salaryInCents);
+
+  const { handles, inputProof } = await ciphertext.encrypt();
+
+  const handle = hexlify(handles[0]);
+  const proof = hexlify(inputProof);
+
+  return { handle, signature: proof };
+};
+
+/**
  * Encrypt a single uint128 value
  */
 export const encryptUint128 = async (

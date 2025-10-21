@@ -3,7 +3,7 @@ import { Contract, BrowserProvider } from 'ethers';
 import { useAccount } from 'wagmi';
 import { toast } from 'sonner';
 import { PAYROLL_MANAGER_ABI, CONTRACT_ADDRESS } from '@/lib/contractABI';
-import { initializeFHE, encryptPayrollData, hashAddress } from '@/lib/fhe';
+import { initializeFHE, encryptUint32, encryptSalary } from '@/lib/fhe';
 import { ethers } from 'ethers';
 
 export const usePayroll = () => {
@@ -47,12 +47,13 @@ export const usePayroll = () => {
     }
   }, [address]);
 
-  // Add Team Member
+  // Add Team Member (with encrypted monthly salary)
   const addTeamMember = useCallback(async (
     organizationId: string,
     memberAddress: string,
     memberName: string,
-    role: string
+    role: string,
+    monthlySalaryUSD: string  // Monthly salary in USD (e.g., "5000.00")
   ) => {
     if (!address) {
       toast.error('Please connect your wallet');
@@ -61,6 +62,21 @@ export const usePayroll = () => {
 
     setLoading(true);
     try {
+      // Initialize FHE
+      toast.info('Initializing encryption...');
+      await initializeFHE();
+
+      // Convert USD to cents
+      const salaryInCents = Math.floor(parseFloat(monthlySalaryUSD) * 100);
+
+      // Encrypt monthly salary
+      toast.info('Encrypting salary...');
+      const { handle: salaryHandle, signature: salaryProof } = await encryptSalary(
+        BigInt(salaryInCents),
+        CONTRACT_ADDRESS,
+        address
+      );
+
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new Contract(CONTRACT_ADDRESS, PAYROLL_MANAGER_ABI, signer);
@@ -70,7 +86,9 @@ export const usePayroll = () => {
         organizationId,
         memberAddress,
         memberName,
-        role
+        role,
+        salaryHandle,
+        salaryProof
       );
 
       toast.info('Waiting for confirmation...');
@@ -86,14 +104,11 @@ export const usePayroll = () => {
     }
   }, [address]);
 
-  // Create Payroll Distribution (with FHE encryption)
+  // Create Payroll Distribution (only needs member address and period)
   const createPayrollDistribution = useCallback(async (
     organizationId: string,
-    recipientAddress: string,
-    memberIndex: number,
-    amount: string, // in ETH/tokens
-    currency: number, // 1=USD, 2=EUR, etc.
-    period: number // YYYYMM format
+    memberAddress: string,
+    period: string  // Format: "202501" (YYYYMM)
   ) => {
     if (!address) {
       toast.error('Please connect your wallet');
@@ -106,44 +121,33 @@ export const usePayroll = () => {
       toast.info('Initializing encryption...');
       await initializeFHE();
 
-      // Hash recipient address for privacy
-      const recipientHash = hashAddress(recipientAddress);
+      // Convert period string to number (e.g., "202501" -> 202501)
+      const periodNum = parseInt(period);
 
-      // Amount is already in cents (e.g., 500000 cents = $5000.00)
-      // This avoids overflow issues with parseEther
-      const amountValue = BigInt(amount);
-
-      // Encrypt all payroll data together
-      toast.info('Encrypting payroll data...');
-      const encrypted = await encryptPayrollData(
-        recipientHash,
-        memberIndex,
-        amountValue,
-        currency,
-        period,
+      // Encrypt period
+      toast.info('Encrypting period...');
+      const { handle: periodHandle, signature: periodProof } = await encryptUint32(
+        periodNum,
         CONTRACT_ADDRESS,
         address
       );
 
       // Generate distribution ID
       const distributionId = ethers.keccak256(
-        ethers.toUtf8Bytes(`${organizationId}-${Date.now()}-${address}`)
+        ethers.toUtf8Bytes(`${organizationId}-${memberAddress}-${period}-${Date.now()}`)
       );
 
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new Contract(CONTRACT_ADDRESS, PAYROLL_MANAGER_ABI, signer);
 
-      toast.info('Creating encrypted payroll distribution...');
+      toast.info('Creating payroll distribution...');
       const tx = await contract.createPayrollDistribution(
         distributionId,
         organizationId,
-        encrypted.recipientHashHandle,
-        encrypted.memberIndexHandle,
-        encrypted.amountHandle,
-        encrypted.currencyHandle,
-        encrypted.periodHandle,
-        encrypted.signature  // Shared proof for all encrypted values (FHE best practice)
+        memberAddress,
+        periodHandle,
+        periodProof
       );
 
       toast.info('Waiting for confirmation...');
@@ -258,6 +262,22 @@ export const usePayroll = () => {
     }
   }, []);
 
+  // Get Organizations where address is a member
+  const getMemberOrganizations = useCallback(async () => {
+    if (!address) return [];
+
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new Contract(CONTRACT_ADDRESS, PAYROLL_MANAGER_ABI, provider);
+
+      const orgIds = await contract.getMemberOrganizations(address);
+      return orgIds;
+    } catch (error: any) {
+      console.error('Get member organizations error:', error);
+      return [];
+    }
+  }, [address]);
+
   return {
     loading,
     createOrganization,
@@ -267,6 +287,7 @@ export const usePayroll = () => {
     getOrganization,
     getMyOrganizations,
     getOrganizationMembers,
-    getTeamMember
+    getTeamMember,
+    getMemberOrganizations
   };
 };
