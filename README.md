@@ -9,6 +9,7 @@
 **PrivyPayroll** is an enterprise-grade encrypted payroll management platform powered by Zama's Fully Homomorphic Encryption (FHE) technology. Keep salary information completely confidential on-chain while maintaining full operational transparency.
 
 🔗 **Live Demo**: [https://privypayroll.vercel.app](https://privypayroll.vercel.app)
+🎥 **Demo Video**: [Watch on YouTube](https://youtu.be/-OOeq5GRTk0)
 
 ---
 
