@@ -967,5 +967,5 @@ export const PAYROLL_MANAGER_ABI = [
   }
 ] as const;
 
-// Deployed on Sepolia testnet
-export const CONTRACT_ADDRESS = "0x8bED9E5B708774c095C523d40dd0c87e6F8BDE88";
+// Deployed on Sepolia testnet (fhEVM 0.9.1)
+export const CONTRACT_ADDRESS = "0xd13Af84D1399e22aBe6258E31AC3dD4b33f8D618";
