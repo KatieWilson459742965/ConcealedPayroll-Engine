@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {FHE, euint32, euint64, euint128, externalEuint32, externalEuint64, externalEuint128} from "@fhevm/solidity/lib/FHE.sol";
-import {SepoliaConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
+import {FHE, euint32, euint64, euint128, externalEuint32, externalEuint64} from "@fhevm/solidity/lib/FHE.sol";
+import {ZamaEthereumConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
 
 /**
  * @title PayrollManager
  * @notice Privacy-preserving payroll management system with FHE encryption
  * @dev Separated concerns: Organization management (plaintext) + Payroll distribution (encrypted)
+ * @dev Updated for fhEVM 0.9.1 - uses ZamaEthereumConfig and FHE.fromExternal()
  */
-contract PayrollManager is SepoliaConfig {
+contract PayrollManager is ZamaEthereumConfig {
 
     // ============ Structs ============
 
@@ -200,7 +201,7 @@ contract PayrollManager is SepoliaConfig {
      * @param memberAddress Wallet address of the member
      * @param memberName Name of the member
      * @param role Role/position of the member
-     * @param encryptedMonthlySalary Encrypted monthly salary in USD cents
+     * @param encryptedMonthlySalary Encrypted monthly salary handle (externalEuint64)
      * @param inputProof Proof for the encrypted salary
      */
     function addTeamMember(
@@ -223,7 +224,7 @@ contract PayrollManager is SepoliaConfig {
             revert MemberAlreadyExists();
         }
 
-        // Import encrypted salary
+        // Import encrypted salary using fhEVM 0.9.1 API
         euint64 monthlySalary = FHE.fromExternal(encryptedMonthlySalary, inputProof);
         FHE.allowThis(monthlySalary);
         FHE.allow(monthlySalary, msg.sender);
@@ -287,7 +288,7 @@ contract PayrollManager is SepoliaConfig {
      * @param distributionId Unique identifier for this distribution
      * @param organizationId ID of the organization
      * @param memberAddress Address of the member receiving payment
-     * @param encryptedPeriod Encrypted payment period (YYYYMM format)
+     * @param encryptedPeriod Encrypted payment period handle (externalEuint32, YYYYMM format)
      * @param inputProof Proof for the encrypted period
      */
     function createPayrollDistribution(
@@ -311,7 +312,7 @@ contract PayrollManager is SepoliaConfig {
             revert MemberNotFound();
         }
 
-        // Import encrypted period
+        // Import encrypted period using fhEVM 0.9.1 API
         euint32 period = FHE.fromExternal(encryptedPeriod, inputProof);
         FHE.allowThis(period);
         FHE.allow(period, msg.sender);
