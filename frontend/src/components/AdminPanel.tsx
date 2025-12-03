@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, UserPlus, Send, Loader2, ArrowLeft, Eye } from "lucide-react";
+import { Building2, UserPlus, Send, Loader2, ArrowLeft, Eye, FileText, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { usePayroll } from "@/hooks/usePayroll";
@@ -24,6 +25,16 @@ interface TeamMember {
   joinedAt: bigint;
 }
 
+interface Distribution {
+  id: string;
+  organizationId: string;
+  initiator: string;
+  createdAt: bigint;
+  executedAt: bigint;
+  isExecuted: boolean;
+  isCancelled: boolean;
+}
+
 type ViewMode = 'list' | 'create-org' | 'manage-org' | 'view-details';
 
 const AdminPanel = () => {
@@ -36,12 +47,15 @@ const AdminPanel = () => {
     getMyOrganizations,
     getOrganizationMembers,
     getTeamMember,
+    getOrganizationDistributions,
+    getDistribution,
   } = usePayroll();
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<string>("");
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [distributions, setDistributions] = useState<Distribution[]>([]);
 
   // Create Organization Form
   const [orgName, setOrgName] = useState("");
@@ -65,10 +79,11 @@ const AdminPanel = () => {
     }
   }, [address]);
 
-  // Load members when organization is selected
+  // Load members and distributions when organization is selected
   useEffect(() => {
     if (selectedOrg) {
       loadMembers();
+      loadDistributions();
     }
   }, [selectedOrg]);
 
@@ -103,6 +118,32 @@ const AdminPanel = () => {
     } catch (error) {
       console.error("Failed to load members:", error);
       setMembers([]);
+    }
+  };
+
+  const loadDistributions = async () => {
+    try {
+      const distributionIds = await getOrganizationDistributions(selectedOrg);
+      const distributionDetails = await Promise.all(
+        distributionIds.map(async (id: string) => {
+          const details = await getDistribution(id);
+          return {
+            id,
+            organizationId: details.organizationId,
+            initiator: details.initiator,
+            createdAt: details.createdAt,
+            executedAt: details.executedAt,
+            isExecuted: details.isExecuted,
+            isCancelled: details.isCancelled,
+          };
+        })
+      );
+      // Sort by createdAt descending (most recent first)
+      distributionDetails.sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+      setDistributions(distributionDetails);
+    } catch (error) {
+      console.error("Failed to load distributions:", error);
+      setDistributions([]);
     }
   };
 
@@ -149,9 +190,10 @@ const AdminPanel = () => {
       );
       setNewMember({ address: "", name: "", role: "", monthlySalary: "" });
       await loadMembers();
-      toast.success("Team member added successfully!");
+      // Toast notification is handled by usePayroll hook with transaction link
     } catch (error: any) {
       console.error("Add member error:", error);
+      // Error toast is handled by usePayroll hook with transaction link
     }
   };
 
@@ -182,9 +224,12 @@ const AdminPanel = () => {
 
       setPayrollPeriod("");
       setSelectedMemberId("");
-      toast.success("Payroll distribution created successfully!");
+      // Reload distributions after creating new one
+      await loadDistributions();
+      // Toast notification is handled by usePayroll hook with transaction link
     } catch (error: any) {
       console.error("Distribute salary error:", error);
+      // Error toast is handled by usePayroll hook with transaction link
     }
   };
 
@@ -520,6 +565,78 @@ const AdminPanel = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Payroll History */}
+        <Card className="glass-card border-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Payroll History
+            </CardTitle>
+            <CardDescription>
+              All payroll distributions for this organization
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {distributions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No payroll distributions yet</p>
+              </div>
+            ) : (
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Distribution ID</TableHead>
+                      <TableHead>Initiator</TableHead>
+                      <TableHead>Created At</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {distributions.map((dist) => (
+                      <TableRow key={dist.id}>
+                        <TableCell className="font-mono text-sm">
+                          <a
+                            href={`https://sepolia.etherscan.io/tx/${dist.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:underline"
+                          >
+                            {dist.id.slice(0, 10)}...{dist.id.slice(-6)}
+                          </a>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          <a
+                            href={`https://sepolia.etherscan.io/address/${dist.initiator}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:underline"
+                          >
+                            {dist.initiator.slice(0, 6)}...{dist.initiator.slice(-4)}
+                          </a>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(Number(dist.createdAt) * 1000).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {dist.isCancelled ? (
+                            <Badge variant="destructive">Cancelled</Badge>
+                          ) : dist.isExecuted ? (
+                            <Badge variant="default" className="bg-green-600">Executed</Badge>
+                          ) : (
+                            <Badge variant="secondary">Pending</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
