@@ -15,6 +15,8 @@ interface TeamMember {
 
 interface Distribution {
   id: string;
+  organizationId: string;
+  initiator: string;
   createdAt: bigint;
   executedAt: bigint;
   isExecuted: boolean;
@@ -69,6 +71,8 @@ const OrganizationDetails = ({ organizationId, organizationName, onBack }: Organ
             const details = await getDistribution(id);
             return {
               id,
+              organizationId: details.organizationId,
+              initiator: details.initiator,
               createdAt: details.createdAt,
               executedAt: details.executedAt,
               isExecuted: details.isExecuted,
@@ -228,6 +232,7 @@ const OrganizationDetails = ({ organizationId, organizationName, onBack }: Organ
                 <TableHeader>
                   <TableRow>
                     <TableHead>Distribution ID</TableHead>
+                    <TableHead>Initiator</TableHead>
                     <TableHead>Created At</TableHead>
                     <TableHead>Executed At</TableHead>
                     <TableHead>Status</TableHead>
@@ -237,7 +242,24 @@ const OrganizationDetails = ({ organizationId, organizationName, onBack }: Organ
                   {distributions.map((dist) => (
                     <TableRow key={dist.id}>
                       <TableCell className="font-mono text-xs">
-                        {dist.id.slice(0, 10)}...{dist.id.slice(-8)}
+                        <a
+                          href={`https://sepolia.etherscan.io/tx/${dist.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:underline"
+                        >
+                          {dist.id.slice(0, 10)}...{dist.id.slice(-8)}
+                        </a>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        <a
+                          href={`https://sepolia.etherscan.io/address/${dist.initiator}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:underline"
+                        >
+                          {dist.initiator.slice(0, 6)}...{dist.initiator.slice(-4)}
+                        </a>
                       </TableCell>
                       <TableCell className="text-sm">
                         <div className="flex items-center gap-2">
