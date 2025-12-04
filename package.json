@@ -1,7 +1,7 @@
 {
   "name": "concealed-payroll-engine",
-  "version": "1.0.0",
-  "description": "Privacy-preserving payroll management system with Zama FHE",
+  "version": "1.1.0",
+  "description": "Privacy-preserving payroll management system with Zama FHE (fhEVM 0.9.1)",
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
@@ -13,9 +13,8 @@
     "hardhat": "^2.22.0"
   },
   "dependencies": {
-    "@fhevm/hardhat-plugin": "^0.1.0",
-    "@fhevm/solidity": "^0.8.0",
-    "dotenv": "^16.4.0",
-    "fhevm": "^0.5.4"
+    "@fhevm/hardhat-plugin": "^0.3.0-1",
+    "@fhevm/solidity": "^0.9.1",
+    "dotenv": "^16.4.0"
   }
 }
